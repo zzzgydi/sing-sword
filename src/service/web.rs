@@ -37,7 +37,8 @@ impl Web {
                 .or(api::get_config())
                 .or(api::get_sing_box())
                 .or(api::put_config())
-                .or(api::put_sing_box());
+                .or(api::put_sing_box())
+                .with(warp::cors().allow_any_origin());
 
             // 启动静态服务器
             if let Ok(dist_dir) = dirs::resources_dir(&app_handle) {
