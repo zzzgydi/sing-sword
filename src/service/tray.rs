@@ -1,4 +1,4 @@
-use crate::{config, service};
+use crate::{config, service, utils::init};
 use anyhow::Result;
 use once_cell::sync::OnceCell;
 use tauri::{
@@ -19,11 +19,18 @@ impl Tray {
         let mut service = SystemTrayMenu::new();
         let core_name = config::Sword::global().core_name();
 
-        if let Ok(core_list) = service::Service::list_core() {
+        if let Ok(core_list) = service::Core::list_core() {
+            // if core_list.len() > 0 {
+            //     service = service
+            //         .to_owned()
+            //         .add_item(CustomMenuItem::new("core_label", "Core").disabled());
+            // }
+
             core_list.iter().for_each(|core| {
                 let core_id = format!("service_core_{core}");
                 let selected = Some(core) == core_name.as_ref();
-                let item = CustomMenuItem::new(core_id, core);
+                let title = format!("{core}");
+                let item = CustomMenuItem::new(core_id, title);
                 let item = if selected { item.selected() } else { item };
                 service = service.to_owned().add_item(item);
             });
@@ -33,6 +40,11 @@ impl Tray {
             }
         }
 
+        let about = SystemTrayMenu::new().add_item(
+            CustomMenuItem::new("app_version", format!("Version {}", init::app_version()))
+                .disabled(),
+        );
+
         SystemTrayMenu::new()
             .add_item(CustomMenuItem::new("dashboard", "Dashboard"))
             .add_submenu(SystemTraySubmenu::new(
@@ -41,6 +53,7 @@ impl Tray {
                     .add_item(CustomMenuItem::new("run_core", "Restart Core"))
                     .add_item(CustomMenuItem::new("run_server", "Restart Server")),
             ))
+            .add_submenu(SystemTraySubmenu::new("About", about))
             .add_native_item(SystemTrayMenuItem::Separator)
             .add_item(CustomMenuItem::new("quit", "Quit").accelerator("CmdOrControl+Q"))
     }
@@ -57,15 +70,15 @@ impl Tray {
                 }
                 open::that(link)?;
             }
-            "run_core" => service::Service::global().run_core()?,
-            "run_server" => service::Service::global().run_web_server(app_handle)?,
+            "run_core" => service::Core::global().run_core()?,
+            "run_server" => service::Web::global().run_web(app_handle)?,
             "quit" => app_handle.exit(0),
             _ => {
                 // 更换核心
                 if id.starts_with("service_core_") {
                     let core = format!("{}", &id[13..]);
 
-                    service::Service::global().change_core(core)?;
+                    service::Core::global().change_core(core)?;
                     app_handle.tray_handle().set_menu(Tray::tray_menu())?;
                 }
             }
