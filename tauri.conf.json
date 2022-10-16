@@ -4,6 +4,7 @@
     "version": "0.0.1"
   },
   "build": {
+    "devPath": "./resources/dist",
     "distDir": "./tauri.conf.json"
   },
   "tauri": {
