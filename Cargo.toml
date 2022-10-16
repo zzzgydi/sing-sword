@@ -2,9 +2,9 @@
 name = "sing-sword"
 version = "0.0.1"
 description = "The proxy launch platform"
-authors = ["you"]
-license = ""
-repository = ""
+authors = ["zzzgydi"]
+license = "GPL-3.0"
+repository = "https://github.com/zzzgydi/sing-sword"
 edition = "2021"
 rust-version = "1.57"
 
