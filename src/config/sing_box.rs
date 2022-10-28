@@ -1,5 +1,7 @@
+use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use std::path::PathBuf;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ISingBox {
@@ -32,6 +34,14 @@ impl Default for ISingBox {
             inbounds: None,
             outbounds: None,
         }
+    }
+}
+
+impl ISingBox {
+    pub fn read_file(path: &PathBuf) -> Result<ISingBox> {
+        let str = std::fs::read_to_string(path)?;
+        let config = serde_json::from_str(&str)?;
+        Ok(config)
     }
 }
 

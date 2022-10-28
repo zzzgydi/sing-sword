@@ -1,6 +1,11 @@
-use crate::{config, service, utils::init};
+use crate::{
+    config::{self, ISingBox},
+    service,
+    utils::{self, dirs, init},
+};
 use anyhow::Result;
 use once_cell::sync::OnceCell;
+use std::net::SocketAddr;
 use tauri::{
     AppHandle, CustomMenuItem, SystemTrayEvent, SystemTrayMenu, SystemTrayMenuItem,
     SystemTraySubmenu,
@@ -40,6 +45,12 @@ impl Tray {
             }
         }
 
+        let config = SystemTrayMenu::new()
+            .add_item(CustomMenuItem::new("open_sword_config", "Sword Config"))
+            .add_item(CustomMenuItem::new("open_sing_config", "SingBox Config"))
+            .add_item(CustomMenuItem::new("open_core_dir", "Core Dir"))
+            .add_item(CustomMenuItem::new("open_logs_dir", "Logs Dir"));
+
         let about = SystemTrayMenu::new().add_item(
             CustomMenuItem::new("app_version", format!("Version {}", init::app_version()))
                 .disabled(),
@@ -47,12 +58,15 @@ impl Tray {
 
         SystemTrayMenu::new()
             .add_item(CustomMenuItem::new("dashboard", "Dashboard"))
+            .add_item(CustomMenuItem::new("clash_dashboard", "Clash Dashboard"))
+            .add_native_item(SystemTrayMenuItem::Separator)
             .add_submenu(SystemTraySubmenu::new(
                 "Service",
                 service
                     .add_item(CustomMenuItem::new("run_core", "Restart Core"))
                     .add_item(CustomMenuItem::new("run_server", "Restart Server")),
             ))
+            .add_submenu(SystemTraySubmenu::new("Config", config))
             .add_submenu(SystemTraySubmenu::new("About", about))
             .add_native_item(SystemTrayMenuItem::Separator)
             .add_item(CustomMenuItem::new("quit", "Quit").accelerator("CmdOrControl+Q"))
@@ -70,8 +84,28 @@ impl Tray {
                 }
                 open::that(link)?;
             }
+            "clash_dashboard" => {
+                let path = dirs::sing_box_path();
+                let sing_box = ISingBox::read_file(&path)?;
+                let url = "https://yacd.haishan.me/";
+
+                if let Some(exp) = sing_box.experimental {
+                    if let Some(clash) = exp.clash_api {
+                        let socket: SocketAddr = clash.external_controller.parse()?;
+                        let mut link = format!("{url}?host={}&port={}", socket.ip(), socket.port());
+                        if let Some(secret) = clash.secret {
+                            link = format!("{link}&secret={secret}");
+                        }
+                        open::that(link)?;
+                    }
+                }
+            }
             "run_core" => service::Core::global().run_core()?,
             "run_server" => service::Web::global().run_web(app_handle)?,
+            "open_sword_config" => utils::open_by_code(&&dirs::sword_config_path())?,
+            "open_sing_config" => utils::open_by_code(&dirs::sing_box_path())?,
+            "open_core_dir" => open::that(dirs::core_dir()?)?,
+            "open_logs_dir" => open::that(dirs::log_dir())?,
             "quit" => app_handle.exit(0),
             _ => {
                 // 更换核心
