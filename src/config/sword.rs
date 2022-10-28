@@ -13,6 +13,7 @@ pub struct ISword {
     pub web_secret: Option<String>,
     pub web_ui: Option<String>, // 外部的ui
 
+    pub clash_ui: Option<String>, // clash 的默认外部ui
     pub core_name: Option<String>,
 }
 
@@ -23,6 +24,7 @@ impl Default for ISword {
             web_allow_lan: false,
             web_secret: None,
             web_ui: None,
+            clash_ui: Some("https://yacd.haishan.me/".into()),
             core_name: None,
         }
     }

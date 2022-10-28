@@ -87,7 +87,11 @@ impl Tray {
             "clash_dashboard" => {
                 let path = dirs::sing_box_path();
                 let sing_box = ISingBox::read_file(&path)?;
-                let url = "https://yacd.haishan.me/";
+                let sword = config::Sword::global();
+                let config = sword.config.read();
+                let default_url = "https://yacd.haishan.me/";
+                let url = config.clash_ui.clone().unwrap_or(default_url.into());
+                drop(config);
 
                 if let Some(exp) = sing_box.experimental {
                     if let Some(clash) = exp.clash_api {
