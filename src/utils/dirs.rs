@@ -62,3 +62,11 @@ pub fn resources_dir(app_handle: &AppHandle) -> Result<PathBuf> {
         .ok_or(anyhow::anyhow!("failed to get resources_dir"))?
         .join("resources"))
 }
+
+pub fn path_to_str(path: &PathBuf) -> Result<&str> {
+    let path_str = path
+        .as_os_str()
+        .to_str()
+        .ok_or(anyhow::anyhow!("failed to get path from {:?}", path))?;
+    Ok(path_str)
+}

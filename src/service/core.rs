@@ -19,8 +19,26 @@ impl Core {
         })
     }
 
+    /// 检查sing box配置
+    pub fn check_config(&self) -> Result<()> {
+        let config_dir = dirs::sing_box_dir();
+        let config_dir = dirs::path_to_str(&config_dir)?;
+        let core_path = current_core_path()?;
+        let output = Command::new_sidecar(core_path)?
+            .args(["check", "--disable-color", "-D", config_dir])
+            .output()?;
+
+        if !output.status.success() {
+            bail!("{}", &output.stderr[21..]); // 过滤掉终端颜色值
+        }
+
+        Ok(())
+    }
+
     /// 启动核心
     pub fn run_core(&self) -> Result<()> {
+        self.check_config()?;
+
         let mut core_handler = self.core_handler.write();
 
         core_handler.take().map(|ch| {
@@ -28,22 +46,9 @@ impl Core {
         });
 
         let config_dir = dirs::sing_box_dir();
-        let config_dir = config_dir
-            .as_os_str()
-            .to_str()
-            .ok_or(anyhow::anyhow!("failed to get sing-box config dir path"))?;
-
-        fn use_core_path(name: &str) -> String {
-            #[cfg(target_os = "windows")]
-            return format!("core\\{name}");
-            #[cfg(not(target_os = "windows"))]
-            return format!("core/{name}");
-        }
-
-        let core_name = Sword::global()
-            .core_name()
-            .ok_or(anyhow::anyhow!("failed to get core name"))?;
-        let cmd = Command::new_sidecar(use_core_path(&core_name))?;
+        let config_dir = dirs::path_to_str(&config_dir)?;
+        let core_path = current_core_path()?;
+        let cmd = Command::new_sidecar(&core_path)?;
 
         #[allow(unused_mut)]
         let (mut rx, cmd_child) = cmd
@@ -52,7 +57,7 @@ impl Core {
 
         *core_handler = Some(cmd_child);
 
-        log::info!(target: "app", "run core {core_name}");
+        log::info!(target: "app", "run core {core_path}");
 
         #[cfg(feature = "stdout-log")]
         tauri::async_runtime::spawn(async move {
@@ -109,4 +114,20 @@ impl Core {
         self.run_core()?;
         Ok(())
     }
+}
+
+/// 获取当前的核心路径
+pub fn current_core_path() -> Result<String> {
+    let core_name = Sword::global()
+        .core_name()
+        .ok_or(anyhow::anyhow!("failed to get core name"))?;
+
+    fn use_core_path(name: &str) -> String {
+        #[cfg(target_os = "windows")]
+        return format!("core\\{name}");
+        #[cfg(not(target_os = "windows"))]
+        return format!("core/{name}");
+    }
+
+    Ok(use_core_path(&core_name))
 }
