@@ -17,11 +17,12 @@ fn main() {
             utils::init::init_app(&app_handle);
 
             let sword = config::Sword::global();
-            let _ = sword.init_config();
-            let _ = sword.init_sing_box();
 
-            let _ = service::Core::global().run_core();
-            let _ = service::Web::global().run_web(&app_handle);
+            notify_log_err!(sword.init_config());
+            notify_log_err!(sword.init_sing_box());
+
+            notify_log_err!(service::Core::global().run_core());
+            notify_log_err!(service::Web::global().run_web(&app_handle));
 
             let _ = app_handle
                 .tray_handle()

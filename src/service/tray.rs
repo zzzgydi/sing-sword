@@ -1,6 +1,6 @@
 use crate::{
     config::{self, ISingBox},
-    service,
+    notify_err, service,
     utils::{self, dirs, init},
 };
 use anyhow::Result;
@@ -104,8 +104,8 @@ impl Tray {
                     }
                 }
             }
-            "run_core" => service::Core::global().run_core()?,
-            "run_server" => service::Web::global().run_web(app_handle)?,
+            "run_core" => notify_err!(service::Core::global().run_core())?,
+            "run_server" => notify_err!(service::Web::global().run_web(app_handle))?,
             "open_sword_config" => utils::open_by_code(&&dirs::sword_config_path())?,
             "open_sing_config" => utils::open_by_code(&dirs::sing_box_path())?,
             "open_core_dir" => open::that(dirs::core_dir()?)?,

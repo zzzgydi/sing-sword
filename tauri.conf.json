@@ -35,7 +35,7 @@
         "icons/icon.icns",
         "icons/icon.ico"
       ],
-      "identifier": "com.github.zzzgydi",
+      "identifier": "sing-sword.com.github.zzzgydi",
       "longDescription": "",
       "macOS": {
         "entitlements": null,
